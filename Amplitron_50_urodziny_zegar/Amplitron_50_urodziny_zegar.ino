@@ -9,6 +9,16 @@
  GND     <--> GND (-)
 */
 
+void setup_RTC()
+{
+  Wire.begin();
+  Wire.beginTransmission(0x68);
+  Wire.write(0x0E);
+  Wire.write(0b00011100);
+  Wire.endTransmission();
+}
+
+
 //Data
 uint8_t hours, minutes, seconds; //data RTC (DS3231)
 
@@ -18,11 +28,7 @@ void setup()
   Serial.begin(9600);
   
   //RTC
-  Wire.begin();
-  Wire.beginTransmission(0x68);
-  Wire.write(0x0E);
-  Wire.write(0b00011100);
-  Wire.endTransmission();
+  setup_RTC();
 }
 
 //Operating system
