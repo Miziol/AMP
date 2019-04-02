@@ -18,9 +18,77 @@ void setup_RTC()
   Wire.endTransmission();
 }
 
+void get_sec( uint8_t* out )
+{
+  Wire.beginTransmission(0x68);
+  Wire.write(0x00);
+  Wire.endTransmission();
+
+  Wire.requestFrom( 0x68, 1);
+
+  while(Wire.available())
+  {
+    *out = Wire.read();
+    
+    *out = (((*out & 0b01110000) >> 4) * 10 + (*out & 0b00001111));
+  }
+}
+
+void get_min( uint8_t* out )
+{
+  Wire.beginTransmission(0x68);
+  Wire.write(0x01);
+  Wire.endTransmission();
+
+  Wire.requestFrom( 0x68, 1);
+
+  while(Wire.available())
+  {
+    *out = Wire.read();
+    
+    *out = (((*out & 0b01110000) >> 4) * 10 + (*out & 0b00001111));
+  }
+}
+
+void get_h( uint8_t* out )
+{
+  Wire.beginTransmission(0x68);
+  Wire.write(0x02);
+  Wire.endTransmission();
+
+  Wire.requestFrom( 0x68, 1);
+
+  while(Wire.available())
+  {
+    *out = Wire.read();
+    
+    *out = (((*out & 0b00100000 ) >> 5) * 20 + ((*out & 0b00010000) >> 4) * 10 + (*out & 0b00001111));
+  }
+}
+
+void get_day( uint8_t* out_day, uint8_t* out_month, uint8_t* out_year )
+{
+  Wire.beginTransmission(0x68);
+  Wire.write(0x04);
+  Wire.endTransmission();
+
+  Wire.requestFrom(0x68, 3);
+
+  while(Wire.available())
+  {
+    *out_day = Wire.read();
+    *out_month = Wire.read();
+    *out_year = Wire.read();
+
+    *out_day = (((*out_day & 0b00110000) >> 4 ) *10 + (*out_day & 0b00001111));
+    *out_month = (((*out_month & 0b00010000) >> 4 ) *10 + (*out_month & 0b00001111));
+    *out_year = (((*out_year & 0b11110000) >> 4 ) *10 + (*out_year & 0b00001111));
+  }
+}
 
 //Data
-uint8_t hours, minutes, seconds; //data RTC (DS3231)
+uint8_t hours, minutes, seconds; //time RTC (DS3231)
+uint8_t day, month, year;
 
 //Setup of elements
 void setup()
@@ -34,24 +102,11 @@ void setup()
 //Operating system
 void loop()
 {
-  
-//reading data form RTC
-  Wire.beginTransmission(0x68); //It's an address of RTC DS3231
-  Wire.write(0);
-  Wire.endTransmission();
-  Wire.requestFrom(0x68, 3);
-
-  while(Wire.available())
-  {
-    seconds = Wire.read();
-    minutes = Wire.read();
-    hours = Wire.read();
-
-    //conversion of data (for more look to spec od RTC)
-    seconds = (((seconds & 0b11110000) >> 4) * 10 + (seconds & 0b00001111));
-    minutes = (((minutes & 0b11110000) >> 4) * 10 + (minutes & 0b00001111));
-    hours = (((hours & 0b00100000) >> 5) * 20 + ((hours & 0b00010000) >> 4) * 10 + (hours & 0b00001111));
-  }
-  
+  get_sec( &seconds );
+  get_min( &minutes );
+  get_h( &hours );
+  get_day( &day, &month, &year );
   Serial.print(hours); Serial.print(":"); Serial.print(minutes); Serial.print(":"); Serial.println(seconds);
+  Serial.print(day); Serial.print("/"); Serial.print(month); Serial.print("/"); Serial.println(year);
+  Serial.println();
 }
